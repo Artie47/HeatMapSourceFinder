@@ -22,8 +22,8 @@ vector<vector<double>> SourceEstimator::computeProbabilityMatrix(
 
     for (int j = 0; j < y_steps; ++j) {
         for (int i = 0; i < x_steps; ++i) {
-            double x = i;  // координата по X равна индексу
-            double y = j;  // координата по Y равна индексу
+            double x = i;
+            double y = j;
 
             double logp = 0.0;
             for (const auto& sensor : sensors) {
@@ -65,7 +65,7 @@ pair<double, double> SourceEstimator::estimateMostLikelyLocation(
     return { max_i, max_j };
 }
 
-pair<double, double> SourceEstimator::indexToWorldCoords(
+/*pair<double, double> SourceEstimator::indexToWorldCoords(
     int i, int j,
     double x_min, double x_max,
     double y_min, double y_max,
@@ -78,4 +78,4 @@ pair<double, double> SourceEstimator::indexToWorldCoords(
     double y = y_min + j * dy;
 
     return { x, y };
-}
+}*/

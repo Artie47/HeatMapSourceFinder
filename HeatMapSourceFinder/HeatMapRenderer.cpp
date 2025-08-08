@@ -73,7 +73,7 @@ QImage HeatMapRenderer::matrixToHeatmapImage(const std::vector<std::vector<doubl
 
 void HeatMapRenderer::drawSensorsOnMatrix(QImage& image, const std::vector<Sensor>& sensors, int matrixWidth, int matrixHeight, float fieldWidth, float fieldHeight) {
     QPainter painter(&image);
-    painter.setRenderHint(QPainter::Antialiasing, false); // без сглаживания, чтобы чёткие клетки были
+    painter.setRenderHint(QPainter::Antialiasing, true); // включаем сглаживание для круга
 
     int pixelWidth = image.width();
     int pixelHeight = image.height();
@@ -81,26 +81,82 @@ void HeatMapRenderer::drawSensorsOnMatrix(QImage& image, const std::vector<Senso
     float cellWidth = pixelWidth / static_cast<float>(matrixWidth);
     float cellHeight = pixelHeight / static_cast<float>(matrixHeight);
 
-    QPen pen(Qt::gray);
-    pen.setWidth(1);
+    QPen pen(Qt::black);
+    pen.setWidth(2);
     painter.setPen(pen);
-    painter.setBrush(Qt::gray); // Цвет датчика (можно изменить при желании)
+    painter.setBrush(Qt::white); // Белая заливка круга
 
     for (const Sensor& sensor : sensors) {
         int matrixX = sensor.get_x();
         int matrixY = sensor.get_y();
 
-        // Верхний левый угол клетки
-        float x = matrixX * cellWidth;
-        float y = matrixY * cellHeight;
+        // Центр ячейки в пикселях
+        float cx = matrixX * cellWidth + cellWidth / 2.0f;
+        float cy = matrixY * cellHeight + cellHeight / 2.0f;
 
-        // Прямоугольник размера ячейки
-        QRectF rect(x, y, cellWidth, cellHeight);
-        painter.drawRect(rect);
+        // Радиус круга — вписанный в ячейку (минимум из ширины и высоты / 2)
+        float radius = std::min(cellWidth, cellHeight) / 2.0f;
+
+        painter.drawEllipse(QPointF(cx, cy), radius, radius);
     }
+
 
     painter.end();
 }
 
+QImage HeatMapRenderer::renderCompleteHeatmap(const std::vector<std::vector<double>>& matrix,
+    const std::vector<Sensor>& sensors) {
+    const int heatmapSize = 500;
+    const int legendWidth = 80;
+    const int footerHeight = 10; // увеличено для полей
 
+    const int fullWidth = heatmapSize + legendWidth + 20; // небольшой отступ справа
+    const int fullHeight = heatmapSize + footerHeight + 20; // отступы сверху/снизу
 
+    QImage finalImage(fullWidth, fullHeight, QImage::Format_RGB32);
+    finalImage.fill(Qt::white);
+
+    QPainter painter(&finalImage);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    // --- 1. Тепловая карта ---
+    QImage heatmapImage = matrixToHeatmapImage(matrix);
+    painter.drawImage(0, 0, heatmapImage);
+
+    // Нарисовать датчики поверх
+    int matrixWidth = matrix[0].size();
+    int matrixHeight = matrix.size();
+    drawSensorsOnMatrix(heatmapImage, sensors, matrixWidth, matrixHeight, 1.0f, 1.0f);
+    painter.drawImage(0, 0, heatmapImage);
+
+    // --- 2. Легенда справа ---
+    const int legendX = heatmapSize + 10;
+    const int legendY = 10;
+    const int legendHeight = heatmapSize - 20;
+    const int legendBarWidth = 20;
+
+    QLinearGradient gradient(legendX, legendY, legendX, legendY + legendHeight);
+    gradient.setColorAt(1.0, QColor::fromHsvF(0.0, 1.0, 1.0));    // красный
+    gradient.setColorAt(0.5, QColor::fromHsvF(0.16, 1.0, 1.0));   // жёлтый
+    gradient.setColorAt(0.0, QColor::fromHsvF(0.66, 1.0, 1.0));   // синий
+
+    painter.setBrush(gradient);
+    painter.setPen(Qt::black);
+    painter.drawRect(legendX, legendY, legendBarWidth, legendHeight);
+
+    // Подписи вероятностей
+    QFont font = painter.font();
+    font.setPointSize(8);
+    painter.setFont(font);
+
+    int steps = 5;
+    for (int i = 0; i <= steps; ++i) {
+        double p = 1.0 - static_cast<double>(i) / steps;
+        int y = legendY + static_cast<int>(p * legendHeight);
+        QString label = QString::number(p, 'f', 2);
+        painter.drawText(legendX + legendBarWidth + 5, y + 4, label);
+    }
+
+    painter.end();
+    return finalImage;
+}

@@ -28,11 +28,11 @@ public:
         double y_min, double y_max
     );
 
-    pair<double, double> indexToWorldCoords(
+    /*pair<double, double> indexToWorldCoords(
         int i, int j,
         double x_min, double x_max,
         double y_min, double y_max,
         int x_steps, int y_steps
-    );
+    );*/
 
 };
