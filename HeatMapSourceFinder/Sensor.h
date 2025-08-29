@@ -1,3 +1,4 @@
+//Sensor.h
 #pragma once
 
 class Sensor
@@ -6,7 +7,9 @@ private:
 	double x, y, std_dev, dist_from_src;
 public:
 
+	Sensor();
 	Sensor(double x, double y, double std_dev, double dist_from_src);
+
 	~Sensor();
 	double get_x() const;
 	double get_y() const;

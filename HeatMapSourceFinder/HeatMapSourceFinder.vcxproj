@@ -36,9 +36,10 @@
     <Import Project="$(QtMsBuild)\qt_defaults.props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
+    <QtBuildConfig>debug</QtBuildConfig>
     <QtInstall>6.10.0_msvc2022_64</QtInstall>
     <QtModules>core;gui;widgets</QtModules>
-    <QtBuildConfig>debug</QtBuildConfig>
+    <QtLinkNatvisFile>true</QtLinkNatvisFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>6.10.0_msvc2022_64</QtInstall>
@@ -93,6 +94,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="HeatMapRenderer.cpp" />
+    <ClCompile Include="LogProcessor.cpp" />
+    <ClCompile Include="PlaceCalcImpl.cpp" />
+    <ClCompile Include="RealTimeOutlierFilter.cpp" />
     <ClCompile Include="Sensor.cpp" />
     <ClCompile Include="SourceEstimator.cpp" />
     <QtRcc Include="HeatMapSourceFinder.qrc" />
@@ -103,8 +107,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HeatMapRenderer.h" />
+    <ClInclude Include="LogProcessor.h" />
+    <ClInclude Include="PlaceCalcI.h" />
+    <ClInclude Include="PlaceCalcImpl.h" />
+    <ClInclude Include="RealTimeOutlierFilter.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Sensor.h" />
     <ClInclude Include="SourceEstimator.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="measure.log" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="HeatMapSourceFinder.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

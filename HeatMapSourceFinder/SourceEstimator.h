@@ -1,3 +1,5 @@
+//SourceEstimator.h
+
 #pragma once
 
 #include <vector>
@@ -22,7 +24,7 @@ public:
         int y_steps
     );
 
-    pair<double, double> estimateMostLikelyLocation(
+    static pair<double, double> estimateMostLikelyLocation(
         const vector<vector<double>>& matrix,
         double x_min, double x_max,
         double y_min, double y_max

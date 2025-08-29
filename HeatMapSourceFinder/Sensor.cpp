@@ -1,3 +1,4 @@
+//Sensor.cpp
 #include "Sensor.h"
 #define _USE_MATH_DEFINES
 #include <iostream>
@@ -5,6 +6,8 @@
 #include <numbers>
 
 using namespace std;
+
+Sensor::Sensor() {};
 
 Sensor::Sensor(double x, double y, double std_dev, double dist_from_src) {
 	this->x = x;

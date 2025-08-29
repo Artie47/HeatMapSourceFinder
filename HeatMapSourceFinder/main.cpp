@@ -1,3 +1,4 @@
+//main.cpp
 #include "HeatMapSourceFinder.h"
 #include <QtWidgets/QApplication>
 

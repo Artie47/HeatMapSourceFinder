@@ -1,84 +1,86 @@
 #pragma once
 
-#include <QMainWindow>
+#include <QtWidgets/QMainWindow>
+#include <QImage>
+#include <QLabel>
+#include <QPushButton>
+#include <QComboBox>
 #include <QLineEdit>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QPushButton>
-#include <QTimer>
-#include <QLabel>
-#include <vector>
+#include <memory>
 
+#include "PlaceCalcI.h"
+#include "PlaceCalcImpl.h"
+#include "LogProcessor.h"
+#include "HeatMapRenderer.h"
 #include "Sensor.h"
+#include <deque>
+#include <QProgressBar>
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class HeatMapSourceFinderClass; }
-QT_END_NAMESPACE
-
-class HeatMapSourceFinder : public QMainWindow
-{
+class HeatMapSourceFinder : public QMainWindow, public PlaceCalcListener {
     Q_OBJECT
 
 public:
     explicit HeatMapSourceFinder(QWidget* parent = nullptr);
     ~HeatMapSourceFinder() override;
 
+    // PlaceCalcListener
+    void __stdcall onCalcResult(
+        double latitude,
+        double longitude,
+        float* probabilityZone,
+        double zoneLeftTopLatitude,
+        double zoneLeftTopLongitude,
+        double zoneRightBottomLatitude,
+        double zoneRightBottomLongitude,
+        unsigned int zoneWidth,
+        unsigned int zoneHeight
+    ) override;
+
+    void __stdcall onError(const char* message) override;
+    void setFilterParameters(size_t window_size, double distance_threshold, double coord_threshold_km);
+
+    void checkDataQuality();
+
 private slots:
-    void addSensorRow(bool insertBeforeButton = true);
-    void renumberSensorLabels();
-    void updateHeatmap();
-    void toggleSimulation();
-    void simulationStep();
-    void buildHeatmapFromInputs(); 
+    void onSelectFile();
+    void updateQualityIndicator(int quality);
+    void onStartProcessing();
+
+    void handleCalcResultOnGui(double latitude, double longitude, std::vector<float> probZone, double zoneLeftTopLatitude, double zoneLeftTopLongitude, double zoneRightBottomLatitude, double zoneRightBottomLongitude, unsigned int zoneWidth, unsigned int zoneHeight);
 
 private:
-    Ui::HeatMapSourceFinderClass* ui;
+    // UI
+    QLabel* m_mapLabel = nullptr;
+    QLabel* m_statusLabel = nullptr;
+    QLabel* m_estimateLabel = nullptr;
+    QPushButton* m_selectFileBtn = nullptr;
+    QPushButton* m_startBtn = nullptr;
+    QComboBox* m_modeCombo = nullptr;
+    QLineEdit* m_intervalEdit = nullptr;
+	QLineEdit* m_sensorIdEdit = nullptr;
+    QProgressBar* m_qualityIndicator = nullptr;
+    // state
+    QString m_selectedFile;
+    std::deque<std::pair<double, double>> m_carrierTrail;
 
-    struct SensorRow {
-        QWidget* rowWidget = nullptr;
-        QLabel* indexLabel = nullptr;
-        QLineEdit* xEdit = nullptr;
-        QLineEdit* yEdit = nullptr;
-        QLineEdit* stdEdit = nullptr;
-        QLineEdit* distEdit = nullptr;
-        QPushButton* removeBtn = nullptr;
-        double vel = 0.0; 
-        double acc = 0.0; 
-    };
+    // core
+    PlaceCalcImpl m_calc;
+    std::unique_ptr<LogProcessor> m_logProcessor; // use unique_ptr to construct with &m_calc
 
-    std::vector<SensorRow> sensorRows;
-
-    QVBoxLayout* sensorInputLayout = nullptr;
-    QPushButton* addSensorButton = nullptr;
-    QPushButton* buildButton = nullptr;
-    QPushButton* timeButton = nullptr;
-    QLabel* estimateLabel = nullptr;
-
-    QLineEdit* matrixWidthEdit = nullptr;
-    QLineEdit* matrixHeightEdit = nullptr;
-    int matrixWidth = 30;
-    int matrixHeight = 30;
-
-    QTimer* simulationTimer = nullptr;
-    bool simulationRunning = false;
-
-    // simulation params
-
-    double estimateSmoothAlpha = 0.25; // EMA smoothing factor for estimated location
-    double lastEstimateX = std::numeric_limits<double>::quiet_NaN();
-    double lastEstimateY = std::numeric_limits<double>::quiet_NaN();
-
-    // состояние движущегося источника (координаты в пространстве матрицы)
-    double sourceX = 0.0;
-    double sourceY = 0.0;
-    double velX = 0.0;
-    double velY = 0.0;
-    double accX = 0.0;
-    double accY = 0.0;
-
-    // параметры симуляции движения источника
-    double simMaxAccel = 1.0;   // макс абсолютное ускорение (ед./с^2)
-    double simMaxVel = 5.0;     // макс скорость (ед./с)
-    int simulationIntervalMs = 250; // шаг таймера (мс)
+    // helper
+    void stopProcessingIfRunning();
+    void renderHeatmapFromMatrix(
+        const std::vector<std::vector<double>>& matrix,
+        const std::vector<std::pair<double, double>>& carriers,
+        double zoneLeftTopLatitude,
+        double zoneLeftTopLongitude,
+        double zoneRightBottomLatitude,
+        double zoneRightBottomLongitude,
+        double estLat,
+        double estLon,
+        double sigmaMeters,
+        const std::deque<std::pair<double, double>>& trail);
 
 };
